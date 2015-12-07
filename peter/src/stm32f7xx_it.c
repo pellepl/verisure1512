@@ -156,7 +156,6 @@ void SysTick_Handler(void)
 {
   HAL_IncTick();
 }
-  
 
 /******************************************************************************/
 /*                 STM32F7xx Peripherals Interrupt Handlers                   */
