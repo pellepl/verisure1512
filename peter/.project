@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>peter-flir</name>
+	<comment></comment>
+	<projects>
+	</projects>
+	<buildSpec>
+		<buildCommand>
+			<name>org.eclipse.cdt.managedbuilder.core.genmakebuilder</name>
+			<triggers>clean,full,incremental,</triggers>
+			<arguments>
+			</arguments>
+		</buildCommand>
+		<buildCommand>
+			<name>org.eclipse.cdt.managedbuilder.core.ScannerConfigBuilder</name>
+			<triggers>full,incremental,</triggers>
+			<arguments>
+			</arguments>
+		</buildCommand>
+	</buildSpec>
+	<natures>
+		<nature>org.eclipse.cdt.core.cnature</nature>
+		<nature>org.eclipse.cdt.core.ccnature</nature>
+		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
+		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
+	</natures>
+	<linkedResources>
+		<link>
+			<name>CMSIS_Include</name>
+			<type>2</type>
+			<location>/home/petera/proj/verisure1512/ext-libs/STM32Cube_FW_F7_V1.2.0/Drivers/CMSIS/Include</location>
+		</link>
+		<link>
+			<name>CMSIS_STM32F7xx</name>
+			<type>2</type>
+			<location>/home/petera/proj/verisure1512/ext-libs/STM32Cube_FW_F7_V1.2.0/Drivers/CMSIS/Device/ST/STM32F7xx</location>
+		</link>
+		<link>
+			<name>STM32F7_Driver</name>
+			<type>2</type>
+			<location>/home/petera/proj/verisure1512/ext-libs/STM32Cube_FW_F7_V1.2.0/Drivers/STM32F7xx_HAL_Driver</location>
+		</link>
+	</linkedResources>
+</projectDescription>
