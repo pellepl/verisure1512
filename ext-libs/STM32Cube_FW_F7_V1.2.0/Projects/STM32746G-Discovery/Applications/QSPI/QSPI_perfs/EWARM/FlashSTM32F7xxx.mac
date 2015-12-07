@@ -1,0 +1,8 @@
+execUserFlashInit()
+{
+  //__message("-I- execUserFlashInit!");
+
+  // unlock flash
+  __writeMemory32(0x45670123, 0x40023C04, "Memory"); // FLASH->FKEYR = FLASH_KEY1;
+  __writeMemory32(0xCDEF89AB, 0x40023C04, "Memory"); // FLASH->FKEYR = FLASH_KEY2;
+}

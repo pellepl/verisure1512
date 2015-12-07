@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<flash_board>
+  <pass>
+    <range>CODE 0x08000000 0x0807FFFF</range>
+    <loader>$PROJ_DIR$\FlashSTM32F756xE.flash</loader>
+  </pass>
+  <pass>
+  <range>CODE 0x00200000 0x0027FFFF</range>
+    <loader>$PROJ_DIR$\FlashSTM32F756xE_TCM.flash</loader>
+  </pass>
+</flash_board>

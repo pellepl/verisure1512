@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<flash_board>
+  <pass>
+    <loader>$PROJ_DIR$\FlashSTM32F756xG.flash</loader>
+    <range>CODE 0x8000000 0x80fffff</range>
+  </pass>
+  <pass>
+    <loader>$PROJ_DIR$\FlashSTM32F756xG_TCM.flash</loader>
+    <range>CODE 0x200000 0x2fffff</range>
+  </pass>
+  <pass>
+    <loader>$PROJ_DIR$\FlashSTM32F7xx_DISCO_QSPI.flash</loader>
+    <range>CODE 0x90000000 0x9fffffff</range>
+    <rel_offset>0x70000000</rel_offset>
+  </pass>
+</flash_board>
+
+
