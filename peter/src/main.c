@@ -28,7 +28,7 @@ int main(void) {
 
   while (1) {
     HAL_GPIO_TogglePin(GPIOI, GPIO_PIN_1);
-    delay(100000);
+    delay(10000000);
   }
 
   return 0;
@@ -103,6 +103,11 @@ void SystemClock_Config(void)
   }
 }
 
+/* Override */
+HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority) {
+  // nop
+}
+
 static void MPU_Config (void) {
   MPU_Region_InitTypeDef MPU_InitStruct;
 
@@ -139,9 +144,8 @@ static void processor_init(void) {
   // test for avoiding systemclock_config usagefault hang
   //HAL_Init();
 
-  // makes ourselves hang in a usage fault after x cycles in delay()
   // pump up the jam to 200MHz
-  //SystemClock_Config();
+  SystemClock_Config();
 }
 
 static volatile uint32_t last_irq = 0;
@@ -151,6 +155,9 @@ static void def_irq(uint32_t irq) {
   while(1);
 }
 
+void HardFault_Handler(void) { def_irq(-999); }
+void SysTick_Handler(void) { def_irq(SysTick_IRQn); }
+void UsageFault_Handler(void) { def_irq(UsageFault_IRQn); }
 void WWDG_IRQHandler(void) { def_irq(WWDG_IRQn); }
 void PVD_IRQHandler(void) { def_irq(PVD_IRQn); }
 void TAMP_STAMP_IRQHandler(void) { def_irq(TAMP_STAMP_IRQn); }
