@@ -1,2 +1,6 @@
 data/main.cpp.i
+data/palettes.cpp.i
+data/LCD_DISCO_F746NG.lib.i
+data/BSP_DISCO_F746NG.lib.i
+data/palettes.h.i
 data/mbed-src.lib.i
