@@ -8,14 +8,12 @@
 #ifndef TARGET_H_
 #define TARGET_H_
 
-// set in makefile
-//#define STM32F746xx
-//#define USE_HAL_DRIVER
-
+#include <common.h>
 #include <stm32f7xx_hal_conf.h>
 #include <stm32f7xx.h>
 
-
+#define CONFIG_UART_CNT 1
+#define CONFIG_UART6
 
 
 #endif /* TARGET_H_ */

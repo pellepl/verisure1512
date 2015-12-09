@@ -80,8 +80,12 @@ BUILD_NUMBER_FILE=build-number.txt
 CPATH 		+= ${sourcedir}
 SPATH 		+= ${sourcedir}
 INC				+= -I./${sourcedir}
-#SFILES		+= stm32f_hardfault.s
+SFILES		+= memset.s
+SFILES		+= memcpy.s
+SFILES		+= variadic.s
 CFILES		+= main.c
+CFILES		+= miniutils.c
+CFILES		+= uart_driver.c
 
 # stm32 lib files
 SPATH 		+= ${stmcmsisdir}/Source/Templates/gcc_ride7

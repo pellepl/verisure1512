@@ -6,15 +6,42 @@
  */
 
 #include <target.h>
+#include <uart_driver.h>
+#include <miniutils.h>
 
 static void delay(uint32_t loops);
 static void processor_init(void);
+static void uart_cb(void *arg, u8_t c);
+
+extern uint8_t FLASH_START, FLASH_SIZE, RAM_START, RAM_SIZE;
+
+static void print_build() {
+  print("\nProcessor running...\n\n");
+  print("FLASH: 0x%08x -- 0x%08x (%ikB)\n",
+      (u32_t)&FLASH_START, (u32_t)&FLASH_START+(u32_t)&FLASH_SIZE, (u32_t)&FLASH_SIZE/1024);
+  print("RAM:   0x%08x -- 0x%08x (%ikB)\n",
+      (u32_t)&RAM_START, (u32_t)&RAM_START+(u32_t)&RAM_SIZE, (u32_t)&RAM_SIZE/1024);
+  print("\nProcessor clock speeds\n"
+        "======================\n"
+        "HCLK:   %i\n"
+        "PCLK1:  %i\n"
+        "PCLK2:  %i\n"
+        "SysClk: %i\n",
+        HAL_RCC_GetHCLKFreq(),
+        HAL_RCC_GetPCLK1Freq(),
+        HAL_RCC_GetPCLK2Freq(),
+        HAL_RCC_GetSysClockFreq()
+        );
+
+
+}
 
 int main(void) {
   GPIO_InitTypeDef gpio_init_structure;
 
   processor_init();
 
+  // LED
   __HAL_RCC_GPIOI_CLK_ENABLE();
 
   HAL_GPIO_DeInit(GPIOI, GPIO_PIN_1);
@@ -26,13 +53,44 @@ int main(void) {
   //gpio_init_structure.Alternate = 0; // nevermind
   HAL_GPIO_Init(GPIOI, &gpio_init_structure);
 
+
+  // UART
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_USART6_CLK_ENABLE();
+
+  gpio_init_structure.Pin = GPIO_PIN_6; // tx
+  gpio_init_structure.Mode = GPIO_MODE_AF_PP;
+  gpio_init_structure.Pull = GPIO_PULLUP;
+  gpio_init_structure.Speed = GPIO_SPEED_FAST;
+  gpio_init_structure.Alternate = GPIO_AF8_USART6;
+  HAL_GPIO_Init(GPIOC, &gpio_init_structure);
+
+  gpio_init_structure.Pin = GPIO_PIN_7; // rx
+  gpio_init_structure.Mode = GPIO_MODE_AF_PP;
+  gpio_init_structure.Pull = GPIO_PULLUP;
+  gpio_init_structure.Speed = GPIO_SPEED_FAST;
+  gpio_init_structure.Alternate = GPIO_AF8_USART6;
+  HAL_GPIO_Init(GPIOC, &gpio_init_structure);
+
+  UART_init();
+  UART_assure_tx(_UART(IOSTD), TRUE);
+  UART_set_callback(_UART(IOSTD), uart_cb, NULL);
+
+  NVIC_EnableIRQ(USART6_IRQn);
+
+  print_build();
+
   while (1) {
-    HAL_GPIO_TogglePin(GPIOI, GPIO_PIN_1);
     delay(10000000);
   }
 
   return 0;
 }
+
+static void uart_cb(void *arg, u8_t c) {
+  print("got:%02x\n", c);
+}
+
 
 static void delay(uint32_t loops) {
   volatile uint32_t a = loops;
@@ -206,6 +264,7 @@ void SPI2_IRQHandler(void) { def_irq(SPI2_IRQn); }
 void USART1_IRQHandler(void) { def_irq(USART1_IRQn); }
 void USART2_IRQHandler(void) { def_irq(USART2_IRQn); }
 void USART3_IRQHandler(void) { def_irq(USART3_IRQn); }
+//void USART6_IRQHandler(void) { def_irq(USART6_IRQn); }
 void EXTI15_10_IRQHandler(void) { def_irq(EXTI15_10_IRQn); }
 void RTC_Alarm_IRQHandler(void) { def_irq(RTC_Alarm_IRQn); }
 void OTG_FS_WKUP_IRQHandler(void) { def_irq(OTG_FS_WKUP_IRQn); }
@@ -237,7 +296,6 @@ void OTG_FS_IRQHandler(void) { def_irq(OTG_FS_IRQn); }
 void DMA2_Stream5_IRQHandler(void) { def_irq(DMA2_Stream5_IRQn); }
 void DMA2_Stream6_IRQHandler(void) { def_irq(DMA2_Stream6_IRQn); }
 void DMA2_Stream7_IRQHandler(void) { def_irq(DMA2_Stream7_IRQn); }
-void USART6_IRQHandler(void) { def_irq(USART6_IRQn); }
 void I2C3_EV_IRQHandler(void) { def_irq(I2C3_EV_IRQn); }
 void I2C3_ER_IRQHandler(void) { def_irq(I2C3_ER_IRQn); }
 void OTG_HS_EP1_OUT_IRQHandler(void) { def_irq(OTG_HS_EP1_OUT_IRQn); }

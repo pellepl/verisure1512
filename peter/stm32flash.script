@@ -1,8 +1,6 @@
 init
-reset
-halt   
+reset halt
 flash erase_address pad 0x08000000 LENGTH
 flash write_bank 0 BUILDFILE 0
-reset
 reset
 exit
