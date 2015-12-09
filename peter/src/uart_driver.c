@@ -17,7 +17,6 @@
 void UART_irq(uart *u) {
 
   if (u->hw == NULL) return;
-  HAL_GPIO_TogglePin(GPIOI, GPIO_PIN_1);
 
   if (UART_CHECK_RX(u) && UART_IS_RX_IRQ_ON(u)) {
     u8_t c = UART_HW(u)->RDR;

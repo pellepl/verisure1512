@@ -78,14 +78,18 @@ BUILD_NUMBER_FILE=build-number.txt
 
 # app files
 CPATH 		+= ${sourcedir}
+CPATH 		+= ${sourcedir}/fromcube
 SPATH 		+= ${sourcedir}
 INC				+= -I./${sourcedir}
+INC				+= -I./${sourcedir}/fromcube
 SFILES		+= memset.s
 SFILES		+= memcpy.s
 SFILES		+= variadic.s
-CFILES		+= main.c
+CFILES		+= main.c app.c common.c
 CFILES		+= miniutils.c
 CFILES		+= uart_driver.c
+
+CFILES		+= stm32f7xx_hal_msp.c
 
 # stm32 lib files
 SPATH 		+= ${stmcmsisdir}/Source/Templates/gcc_ride7
@@ -98,9 +102,9 @@ INC				+= -I./${stmdriverdir}/Inc
 INC				+= -I./${stmcmsisdir}/Include 
 INC				+= -I./${stmcmsisdircore}
 
+CFILES		+= stm32f7xx_hal.c
 #CFILES		+= stm32f7xx_hal_adc.c
 #CFILES		+= stm32f7xx_hal_adc_ex.c
-CFILES		+= stm32f7xx_hal.c
 #CFILES		+= stm32f7xx_hal_can.c
 #CFILES		+= stm32f7xx_hal_cec.c
 CFILES		+= stm32f7xx_hal_cortex.c
@@ -113,8 +117,8 @@ CFILES		+= stm32f7xx_hal_cortex.c
 #CFILES		+= stm32f7xx_hal_dcmi.c
 #CFILES		+= stm32f7xx_hal_dcmi_ex.c
 #CFILES		+= stm32f7xx_hal_dma2d.c
-#CFILES		+= stm32f7xx_hal_dma.c
-#CFILES		+= stm32f7xx_hal_dma_ex.c
+CFILES		+= stm32f7xx_hal_dma.c
+CFILES		+= stm32f7xx_hal_dma_ex.c
 #CFILES		+= stm32f7xx_hal_eth.c
 CFILES		+= stm32f7xx_hal_flash.c
 CFILES		+= stm32f7xx_hal_flash_ex.c
@@ -128,7 +132,7 @@ CFILES		+= stm32f7xx_hal_gpio.c
 #CFILES		+= stm32f7xx_hal_irda.c
 #CFILES		+= stm32f7xx_hal_iwdg.c
 #CFILES		+= stm32f7xx_hal_lptim.c
-#CFILES		+= stm32f7xx_hal_ltdc.c
+CFILES		+= stm32f7xx_hal_ltdc.c
 #CFILES		+= stm32f7xx_hal_msp_template.c
 #CFILES		+= stm32f7xx_hal_nand.c
 #CFILES		+= stm32f7xx_hal_nor.c
@@ -138,7 +142,7 @@ CFILES		+= stm32f7xx_hal_pwr.c
 CFILES		+= stm32f7xx_hal_pwr_ex.c
 #CFILES		+= stm32f7xx_hal_qspi.c
 CFILES		+= stm32f7xx_hal_rcc.c
-#CFILES		+= stm32f7xx_hal_rcc_ex.c
+CFILES		+= stm32f7xx_hal_rcc_ex.c
 #CFILES		+= stm32f7xx_hal_rng.c
 #CFILES		+= stm32f7xx_hal_rtc.c
 #CFILES		+= stm32f7xx_hal_rtc_ex.c
@@ -149,14 +153,14 @@ CFILES		+= stm32f7xx_hal_rcc.c
 #CFILES		+= stm32f7xx_hal_smartcard_ex.c
 #CFILES		+= stm32f7xx_hal_spdifrx.c
 #CFILES		+= stm32f7xx_hal_spi.c
-#CFILES		+= stm32f7xx_hal_sdram.c
-#CFILES		+= stm32f7xx_hal_sram.c
+CFILES		+= stm32f7xx_hal_sdram.c
+CFILES		+= stm32f7xx_hal_sram.c
 #CFILES		+= stm32f7xx_hal_tim.c
 #CFILES		+= stm32f7xx_hal_tim_ex.c
 #CFILES		+= stm32f7xx_hal_uart.c
 #CFILES		+= stm32f7xx_hal_usart.c
 #CFILES		+= stm32f7xx_hal_wwdg.c
-#CFILES		+= stm32f7xx_ll_fmc.c
+CFILES		+= stm32f7xx_ll_fmc.c
 #CFILES		+= stm32f7xx_ll_sdmmc.c
 #CFILES		+= stm32f7xx_ll_usb.c
 
