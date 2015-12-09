@@ -29,5 +29,6 @@ typedef signed long long s64_t;
 #define IOSTD   (0)
 
 extern void *_variadic_call(void *func, int argc, void* args);
+void halt(const char *str, ...);
 
 #endif /* COMMON_H_ */

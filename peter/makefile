@@ -85,7 +85,7 @@ INC				+= -I./${sourcedir}/fromcube
 SFILES		+= memset.s
 SFILES		+= memcpy.s
 SFILES		+= variadic.s
-CFILES		+= main.c
+CFILES		+= main.c app.c common.c
 CFILES		+= miniutils.c
 CFILES		+= uart_driver.c
 

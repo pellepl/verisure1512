@@ -12,7 +12,7 @@
 #include "stm32746g_discovery.h"
 #include "stm32746g_discovery_lcd.h"
 #include <stdarg.h>
-
+#include <app.h>
 
 extern uint8_t FLASH_START, FLASH_SIZE, RAM_START, RAM_SIZE;
 
@@ -24,16 +24,10 @@ static void LCD_Config(void);
 static void sdram_init_seq(SDRAM_HandleTypeDef *hsdram,
     FMC_SDRAM_CommandTypeDef *Command);
 static void sdram_test(void);
-static void halt(const char *str, ...);
-
 
 SDRAM_HandleTypeDef      hsdram;
 FMC_SDRAM_TimingTypeDef  SDRAM_Timing;
 FMC_SDRAM_CommandTypeDef command;
-
-static void start_app() {
-  sdram_test();
-}
 
 static void print_hello() {
   print("\nProcessor running...\n\n");
@@ -224,13 +218,15 @@ int main(void) {
 
   init_uart();
 
-  init_display();
-
   print_hello();
 
   init_sdram();
 
-  start_app();
+  init_display();
+
+  sdram_test();
+
+  app_start();
 
   print("\nstartup finished\n");
 
@@ -368,7 +364,7 @@ static void SystemClock_Config(void)
   }
 }
 
-
+#if 0
 /* Override */
 HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority) {
   // nop
@@ -382,7 +378,7 @@ void HAL_Delay(__IO uint32_t Delay) {
   q /= 2;
   while(q--);
 }
-
+#endif
 
 /**
   * @brief LCD Configuration.
@@ -447,7 +443,7 @@ static void LCD_Config(void)
   pLayerCfg.PixelFormat = LTDC_PIXEL_FORMAT_RGB565;
 
   /* Start Address configuration : frame buffer is located at FLASH memory */
-  pLayerCfg.FBStartAdress = (uint32_t)0x08000000;
+  pLayerCfg.FBStartAdress = (uint32_t)FBUF_ADDR;
 
   /* Alpha constant (255 == totally opaque) */
   pLayerCfg.Alpha = 255;
@@ -576,25 +572,10 @@ static void sdram_init_seq(SDRAM_HandleTypeDef *hsdram, FMC_SDRAM_CommandTypeDef
 
 }
 
-static void halt(const char *str, ...) {
-  UART_tx_flush(_UART(IOSTD));
-  UART_sync_tx(_UART(IOSTD), TRUE);
 
-  print("HALT\n");
-  va_list arg_p;
-  va_start(arg_p, str);
-  vprint(str, arg_p);
-  va_end(arg_p);
-  print("\n");
-  while (1) {
-    HAL_GPIO_TogglePin(GPIOI, GPIO_PIN_1);
-    HAL_Delay(500);
-  }
-}
+void SysTick_Handler(void) { HAL_IncTick(); }
 
-
-
-#if 1
+#if 0
 static volatile uint32_t last_irq = 0;
 
 static void def_irq(uint32_t irq) {
@@ -603,7 +584,6 @@ static void def_irq(uint32_t irq) {
 }
 
 void HardFault_Handler(void) { def_irq(-999); }
-void SysTick_Handler(void) { def_irq(SysTick_IRQn); }
 void UsageFault_Handler(void) { def_irq(UsageFault_IRQn); }
 void WWDG_IRQHandler(void) { def_irq(WWDG_IRQn); }
 void PVD_IRQHandler(void) { def_irq(PVD_IRQn); }
