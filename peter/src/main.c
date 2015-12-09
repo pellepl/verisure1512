@@ -11,7 +11,8 @@
 #include "stm32f7xx_hal.h"
 #include "stm32746g_discovery.h"
 #include "stm32746g_discovery_lcd.h"
-#include "RGB565_480x272.h"
+#include <stdarg.h>
+
 
 extern uint8_t FLASH_START, FLASH_SIZE, RAM_START, RAM_SIZE;
 
@@ -20,7 +21,19 @@ static void uart_cb(void *arg, u8_t c);
 static void SystemClock_Config(void);
 static void MPU_Config(void);
 static void LCD_Config(void);
+static void sdram_init_seq(SDRAM_HandleTypeDef *hsdram,
+    FMC_SDRAM_CommandTypeDef *Command);
+static void sdram_test(void);
+static void halt(const char *str, ...);
 
+
+SDRAM_HandleTypeDef      hsdram;
+FMC_SDRAM_TimingTypeDef  SDRAM_Timing;
+FMC_SDRAM_CommandTypeDef command;
+
+static void start_app() {
+  sdram_test();
+}
 
 static void print_hello() {
   print("\nProcessor running...\n\n");
@@ -54,6 +67,92 @@ static void init_processor(void) {
 
   // pump up the jam to 216MHz
   SystemClock_Config();
+}
+
+static void init_sdram(void) {
+  GPIO_InitTypeDef  GPIO_Init_Structure;
+
+  /*##-1- Enable peripherals and GPIO Clocks #################################*/
+  /* Enable GPIO clocks */
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOE_CLK_ENABLE();
+  __HAL_RCC_GPIOF_CLK_ENABLE();
+  __HAL_RCC_GPIOG_CLK_ENABLE();
+  __HAL_RCC_GPIOH_CLK_ENABLE();
+
+  /* Enable FMC clock */
+  __HAL_RCC_FMC_CLK_ENABLE();
+
+  /*##-2- Configure peripheral GPIO ##########################################*/
+  GPIO_Init_Structure.Mode      = GPIO_MODE_AF_PP;
+  GPIO_Init_Structure.Pull      = GPIO_PULLUP;
+  GPIO_Init_Structure.Speed     = GPIO_SPEED_FAST;
+  GPIO_Init_Structure.Alternate = GPIO_AF12_FMC;
+
+
+  /* GPIOC configuration */
+  GPIO_Init_Structure.Pin   = GPIO_PIN_3;
+  HAL_GPIO_Init(GPIOC, &GPIO_Init_Structure);
+
+  /* GPIOD configuration */
+  GPIO_Init_Structure.Pin   = GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_3 | GPIO_PIN_8 | GPIO_PIN_9 |
+                              GPIO_PIN_10 | GPIO_PIN_14 | GPIO_PIN_15;
+  HAL_GPIO_Init(GPIOD, &GPIO_Init_Structure);
+
+  /* GPIOE configuration */
+  GPIO_Init_Structure.Pin   = GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_7| GPIO_PIN_8 | GPIO_PIN_9       |\
+                              GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 |\
+                              GPIO_PIN_15;
+  HAL_GPIO_Init(GPIOE, &GPIO_Init_Structure);
+
+  /* GPIOF configuration */
+  GPIO_Init_Structure.Pin   = GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3 | GPIO_PIN_4      |\
+                              GPIO_PIN_5 | GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 |\
+                              GPIO_PIN_15;
+  HAL_GPIO_Init(GPIOF, &GPIO_Init_Structure);
+
+  /* GPIOG configuration */
+  GPIO_Init_Structure.Pin   = GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_4| GPIO_PIN_5 | GPIO_PIN_8 |\
+                              GPIO_PIN_15;
+  HAL_GPIO_Init(GPIOG, &GPIO_Init_Structure);
+
+  /* GPIOH configuration */
+  GPIO_Init_Structure.Pin   = GPIO_PIN_3 | GPIO_PIN_5;
+  HAL_GPIO_Init(GPIOH, &GPIO_Init_Structure);
+
+  /*##-1- Configure the SDRAM device #########################################*/
+  /* SDRAM device configuration */
+  hsdram.Instance = FMC_SDRAM_DEVICE;
+
+  SDRAM_Timing.LoadToActiveDelay    = 2;
+  SDRAM_Timing.ExitSelfRefreshDelay = 6;
+  SDRAM_Timing.SelfRefreshTime      = 4;
+  SDRAM_Timing.RowCycleDelay        = 6;
+  SDRAM_Timing.WriteRecoveryTime    = 2;
+  SDRAM_Timing.RPDelay              = 2;
+  SDRAM_Timing.RCDDelay             = 2;
+
+  hsdram.Init.SDBank             = FMC_SDRAM_BANK1;
+  hsdram.Init.ColumnBitsNumber   = FMC_SDRAM_COLUMN_BITS_NUM_8;
+  hsdram.Init.RowBitsNumber      = FMC_SDRAM_ROW_BITS_NUM_12;
+  hsdram.Init.MemoryDataWidth    = SDRAM_MEMORY_WIDTH;
+  hsdram.Init.InternalBankNumber = FMC_SDRAM_INTERN_BANKS_NUM_4;
+  hsdram.Init.CASLatency         = FMC_SDRAM_CAS_LATENCY_2;
+  hsdram.Init.WriteProtection    = FMC_SDRAM_WRITE_PROTECTION_DISABLE;
+  hsdram.Init.SDClockPeriod      = SDCLOCK_PERIOD;
+  hsdram.Init.ReadBurst          = FMC_SDRAM_RBURST_ENABLE;
+  hsdram.Init.ReadPipeDelay      = FMC_SDRAM_RPIPE_DELAY_0;
+
+  /* Initialize the SDRAM controller */
+  if(HAL_SDRAM_Init(&hsdram, &SDRAM_Timing) != HAL_OK)
+  {
+    /* Initialization Error */
+    halt("sdram init");
+  }
+
+  /* Program the SDRAM external device */
+  sdram_init_seq(&hsdram, &command);
 }
 
 static void init_display(void) {
@@ -129,8 +228,14 @@ int main(void) {
 
   print_hello();
 
-  while (1) {
-    delay(10000000);
+  init_sdram();
+
+  start_app();
+
+  print("\nstartup finished\n");
+
+  while(1) {
+    __WFI();
   }
 
   return 0;
@@ -138,6 +243,58 @@ int main(void) {
 
 static void uart_cb(void *arg, u8_t c) {
   print("got:%02x\n", c);
+}
+
+static void sdram_test(void) {
+  const u32_t M = 0xa72e1069;
+  u32_t addr = 0xc0000000;
+  u8_t *pb = (u8_t *)addr;
+  u16_t *ps = (u16_t *)addr;
+  u32_t *pw = (u32_t *)addr;
+  const u32_t size = 1024*1024*4;
+  u32_t i;
+
+  print("testing sdram @ %08x, %i bytes\n", addr, size);
+  print("8 bit\n");
+  i = 0;
+  while (i < size) {
+    pb[i] = (M*i);
+    i++;
+  }
+  i = 0;
+  while (i < size) {
+    if (pb[i] != (u8_t)(M*i)) {
+      halt("8 bit @ %08x %02x!=%02x",  &pb[i], pb[i], (u8_t)(M*i));
+    }
+    i++;
+  }
+  print("16 bit\n");
+  i = 0;
+  while (i < size/2) {
+    ps[i] = (M*i);
+    i++;
+  }
+  i = 0;
+  while (i < size) {
+    if (ps[i] != (u16_t)(M*i)) {
+      halt("16 bit @ %08x %04x!=%04x",  &ps[i], ps[i], (u16_t)(M*i));
+    }
+    i++;
+  }
+  print("32 bit\n");
+  i = 0;
+  while (i < size/4) {
+    pw[i] = (M*i);
+    i++;
+  }
+  i = 0;
+  while (i < size/4) {
+    if (pw[i] != (u32_t)(M*i)) {
+      halt("32 bit @ %08x %08x!=%08x",  &pw[i], pw[i], (u32_t)(M*i));
+    }
+    i++;
+  }
+  print("OK\n");
 }
 
 
@@ -187,14 +344,14 @@ static void SystemClock_Config(void)
   ret = HAL_RCC_OscConfig(&RCC_OscInitStruct);
   if(ret != HAL_OK)
   {
-    while(1) { ; }
+    halt("RCC osc config");
   }
 
   /* Activate the OverDrive to reach the 216 MHz Frequency */
   ret = HAL_PWREx_EnableOverDrive();
   if(ret != HAL_OK)
   {
-    while(1) { ; }
+    halt("overdrive");
   }
 
   /* Select PLL as system clock source and configure the HCLK, PCLK1 and PCLK2 clocks dividers */
@@ -207,7 +364,7 @@ static void SystemClock_Config(void)
   ret = HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_7);
   if(ret != HAL_OK)
   {
-    while(1) { ; }
+    halt("clockconfig");
   }
 }
 
@@ -216,6 +373,14 @@ static void SystemClock_Config(void)
 HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority) {
   // nop
   return HAL_OK;
+}
+
+/* Override */
+void HAL_Delay(__IO uint32_t Delay) {
+  volatile u64_t q = HAL_RCC_GetHCLKFreq() / 1000;
+  q *= Delay;
+  q /= 2;
+  while(q--);
 }
 
 
@@ -282,7 +447,7 @@ static void LCD_Config(void)
   pLayerCfg.PixelFormat = LTDC_PIXEL_FORMAT_RGB565;
 
   /* Start Address configuration : frame buffer is located at FLASH memory */
-  pLayerCfg.FBStartAdress = (uint32_t)&RGB565_480x272;
+  pLayerCfg.FBStartAdress = (uint32_t)0x08000000;
 
   /* Alpha constant (255 == totally opaque) */
   pLayerCfg.Alpha = 255;
@@ -305,14 +470,14 @@ static void LCD_Config(void)
   if(HAL_LTDC_Init(&hltdc_F) != HAL_OK)
   {
     /* Initialization Error */
-    while(1);
+    halt("ltdc init");
   }
 
   /* Configure the Layer*/
   if(HAL_LTDC_ConfigLayer(&hltdc_F, &pLayerCfg, 1) != HAL_OK)
   {
     /* Initialization Error */
-    while(1);
+    halt("ltdc config layer");
   }
 }
 
@@ -349,7 +514,87 @@ static void MPU_Config(void)
   HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
 }
 
+/**
+  * @brief  Perform the SDRAM exernal memory inialization sequence
+  * @param  hsdram: SDRAM handle
+  * @param  Command: Pointer to SDRAM command structure
+  * @retval None
+  */
+static void sdram_init_seq(SDRAM_HandleTypeDef *hsdram, FMC_SDRAM_CommandTypeDef *Command)
+{
+  __IO uint32_t tmpmrd =0;
+  /* Step 3:  Configure a clock configuration enable command */
+  Command->CommandMode = FMC_SDRAM_CMD_CLK_ENABLE;
+  Command->CommandTarget = FMC_SDRAM_CMD_TARGET_BANK1;
+  Command->AutoRefreshNumber = 1;
+  Command->ModeRegisterDefinition = 0;
 
+  /* Send the command */
+  HAL_SDRAM_SendCommand(hsdram, Command, SDRAM_TIMEOUT);
+
+  /* Step 4: Insert 100 us minimum delay */
+  /* Inserted delay is equal to 1 ms due to systick time base unit (ms) */
+  HAL_Delay(1);
+
+  /* Step 5: Configure a PALL (precharge all) command */
+  Command->CommandMode = FMC_SDRAM_CMD_PALL;
+  Command->CommandTarget = FMC_SDRAM_CMD_TARGET_BANK1;
+  Command->AutoRefreshNumber = 1;
+  Command->ModeRegisterDefinition = 0;
+
+  /* Send the command */
+  HAL_SDRAM_SendCommand(hsdram, Command, SDRAM_TIMEOUT);
+
+  /* Step 6 : Configure a Auto-Refresh command */
+  Command->CommandMode = FMC_SDRAM_CMD_AUTOREFRESH_MODE;
+  Command->CommandTarget = FMC_SDRAM_CMD_TARGET_BANK1;
+  Command->AutoRefreshNumber = 8;
+  Command->ModeRegisterDefinition = 0;
+
+  /* Send the command */
+  HAL_SDRAM_SendCommand(hsdram, Command, SDRAM_TIMEOUT);
+
+  /* Step 7: Program the external memory mode register */
+  tmpmrd = (uint32_t)SDRAM_MODEREG_BURST_LENGTH_1          |
+                     SDRAM_MODEREG_BURST_TYPE_SEQUENTIAL   |
+                     SDRAM_MODEREG_CAS_LATENCY_2           |
+                     SDRAM_MODEREG_OPERATING_MODE_STANDARD |
+                     SDRAM_MODEREG_WRITEBURST_MODE_SINGLE;
+
+  Command->CommandMode = FMC_SDRAM_CMD_LOAD_MODE;
+  Command->CommandTarget = FMC_SDRAM_CMD_TARGET_BANK1;
+  Command->AutoRefreshNumber = 1;
+  Command->ModeRegisterDefinition = tmpmrd;
+
+  /* Send the command */
+  HAL_SDRAM_SendCommand(hsdram, Command, SDRAM_TIMEOUT);
+
+  /* Step 8: Set the refresh rate counter */
+  /* (15.62 us x Freq) - 20 */
+  /* Set the device refresh counter */
+  hsdram->Instance->SDRTR |= ((uint32_t)((1292)<< 1));
+
+}
+
+static void halt(const char *str, ...) {
+  UART_tx_flush(_UART(IOSTD));
+  UART_sync_tx(_UART(IOSTD), TRUE);
+
+  print("HALT\n");
+  va_list arg_p;
+  va_start(arg_p, str);
+  vprint(str, arg_p);
+  va_end(arg_p);
+  print("\n");
+  while (1) {
+    HAL_GPIO_TogglePin(GPIOI, GPIO_PIN_1);
+    HAL_Delay(500);
+  }
+}
+
+
+
+#if 1
 static volatile uint32_t last_irq = 0;
 
 static void def_irq(uint32_t irq) {
@@ -457,4 +702,4 @@ void CEC_IRQHandler(void) { def_irq(CEC_IRQn); }
 void I2C4_EV_IRQHandler(void) { def_irq(I2C4_EV_IRQn); }
 void I2C4_ER_IRQHandler(void) { def_irq(I2C4_ER_IRQn); }
 void SPDIF_RX_IRQHandler(void) { def_irq(SPDIF_RX_IRQn); }
-
+#endif

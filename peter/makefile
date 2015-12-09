@@ -160,7 +160,7 @@ CFILES		+= stm32f7xx_hal_sram.c
 #CFILES		+= stm32f7xx_hal_uart.c
 #CFILES		+= stm32f7xx_hal_usart.c
 #CFILES		+= stm32f7xx_hal_wwdg.c
-#CFILES		+= stm32f7xx_ll_fmc.c
+CFILES		+= stm32f7xx_ll_fmc.c
 #CFILES		+= stm32f7xx_ll_sdmmc.c
 #CFILES		+= stm32f7xx_ll_usb.c
 
