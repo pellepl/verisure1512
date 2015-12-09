@@ -67,7 +67,8 @@ void create_image(void)
             if(i % DATA_PER_PACKET < 2) {
                 continue;
             }
-            value = lepton_buffer[p*BYTES_PER_PACKET+i*2+1] < 8 + lepton_buffer[p*BYTES_PER_PACKET+i*2+0];
+            value = (lepton_buffer[p*BYTES_PER_PACKET+i*2+0] << 8) + lepton_buffer[p*BYTES_PER_PACKET+i*2+1];
+            //pc.printf("val = %d\n",value);
             if(value > max_val) {
                 max_val = value;
             }
@@ -76,6 +77,8 @@ void create_image(void)
             }
         }
     }
+    
+    //pc.printf("max %d, min %d\n", max_val, min_val);
 
     float diff = max_val - min_val;
     float scale = 255/diff;
@@ -88,19 +91,21 @@ void create_image(void)
             if(i % DATA_PER_PACKET < 2) {
                 continue;
             }
-#if 0
-            value = lepton_buffer[p*BYTES_PER_PACKET+i*2+1] < 8 + lepton_buffer[p*BYTES_PER_PACKET+i*2+0];
-            column = (i % DATA_PER_PACKET ) - 2;
-            row = i / DATA_PER_PACKET;
+            value = (lepton_buffer[p*BYTES_PER_PACKET+i*2+0] << 8) + lepton_buffer[p*BYTES_PER_PACKET+i*2+1];
 
-            value = (value - min_val) / scale;
+            column = (i % DATA_PER_PACKET ) - 2;
+            row = p;
+#if 1
+            value = (value - min_val) * scale;
+            //pc.printf("val = %d\n", value);
             r = colormap_ironblack[3*value];
             g = colormap_ironblack[3*value+1];
             b = colormap_ironblack[3*value+2];
 
             lepton_image[row][column] = (0xFF << 24) | (r << 16) | (g << 8) | b;
-#endif
+#else
             lepton_image[row][column] = (0xFF << 24) | (value % 255) << 16 | (value % 255) << 8 | (value % 255);
+#endif
         }
     }
 }
@@ -137,7 +142,7 @@ void dump_frame(void)
 
     for(p=0; p<PACKETS_PER_FRAME; p++) {
         pc.printf("\n\nPacket %d:\n", p);
-        for(i=0; i<DATA_PER_PACKET; i++) {
+        for(i=0; i<BYTES_PER_PACKET; i++) {
         	pc.printf("%x ", lepton_buffer[p*BYTES_PER_PACKET+i]);
         }
     }
@@ -151,8 +156,8 @@ int main()
 
     while(1) {
         get_frame();
-        dump_frame();
-        //create_image();
+        //dump_frame();
+        create_image();
         //dummy_image();
         show_image();
     }
