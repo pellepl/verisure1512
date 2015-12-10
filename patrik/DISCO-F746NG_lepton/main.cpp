@@ -12,7 +12,7 @@ DigitalOut spi_cs(SPI_CS);
 LCD_DISCO_F746NG lcd;
 
 static uint8_t lepton_buffer[BYTES_PER_PACKET * PACKETS_PER_FRAME];
-static uint32_t lepton_image[80][60];
+static uint32_t lepton_image[60][80];
 
 void setup(void)
 {
@@ -57,16 +57,13 @@ void create_image(void)
     uint16_t min_val = 65535;
     uint16_t max_val = 0;
     uint16_t value;
-    int column;
-    int row;
+    int x;
+    int y;
     int i;
     int p;
 
     for(p=0; p<PACKETS_PER_FRAME; p++) {
-        for(i=0; i<DATA_PER_PACKET; i++) {
-            if(i % DATA_PER_PACKET < 2) {
-                continue;
-            }
+        for(i=2; i<DATA_PER_PACKET; i++) {
             value = (lepton_buffer[p*BYTES_PER_PACKET+i*2+0] << 8) + lepton_buffer[p*BYTES_PER_PACKET+i*2+1];
             //pc.printf("val = %d\n",value);
             if(value > max_val) {
@@ -87,14 +84,12 @@ void create_image(void)
     uint8_t b;
 
     for(p=0; p<PACKETS_PER_FRAME; p++) {
-        for(i=0; i<DATA_PER_PACKET; i++) {
-            if(i % DATA_PER_PACKET < 2) {
-                continue;
-            }
+        for(i=2; i<DATA_PER_PACKET; i++) {
+
             value = (lepton_buffer[p*BYTES_PER_PACKET+i*2+0] << 8) + lepton_buffer[p*BYTES_PER_PACKET+i*2+1];
 
-            column = (i % DATA_PER_PACKET ) - 2;
-            row = p;
+            x = i - 2;
+            y = p;
 #if 1
             value = (value - min_val) * scale;
             //pc.printf("val = %d\n", value);
@@ -102,9 +97,9 @@ void create_image(void)
             g = colormap_ironblack[3*value+1];
             b = colormap_ironblack[3*value+2];
 
-            lepton_image[row][column] = (0xFF << 24) | (r << 16) | (g << 8) | b;
+            lepton_image[y][x] = (0xFF << 24) | (r << 16) | (g << 8) | b;
 #else
-            lepton_image[row][column] = (0xFF << 24) | (value % 255) << 16 | (value % 255) << 8 | (value % 255);
+            lepton_image[y][x] = (0xFF << 24) | (value % 255) << 16 | (value % 255) << 8 | (value % 255);
 #endif
         }
     }
@@ -112,25 +107,25 @@ void create_image(void)
 
 void dummy_image(void)
 {
-    int column;
-    int row;
+    int x;
+    int y;
 
-    for(row=0; row<80; row++) {
-        for(column=0; column<60; column++) {
-            lepton_image[row][column] = (0xFF << 24) | (row << 16) | (column << 8);
+    for(y=0; y<60; y++) {
+        for(x=0; x<80; x++) {
+            lepton_image[y][x] = (0xFF << 24) | (x << 16) | (y << 8);
         }
     }
 }
 
 void show_image(void)
 {
-    int column;
-    int row;
+    int x;
+    int y;
 
-    for(row=0; row<80; row++) {
-        for(column=0; column<60; column++) {
-            lcd.SetTextColor(lepton_image[row][column]);
-            lcd.FillRect(row*4, column*4, 4, 4);
+    for(y=0; y<60; y++) {
+        for(x=0; x<80; x++) {
+            lcd.SetTextColor(lepton_image[y][x]);
+            lcd.FillRect(x*5, y*4, 5, 4);
         }
     }
 }
