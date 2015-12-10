@@ -90,6 +90,7 @@ CFILES		+= miniutils.c
 CFILES		+= uart_driver.c
 CFILES		+= flir.c
 CFILES		+= joystick.c
+CFILES		+= servo.c
 
 CFILES		+= stm32f7xx_hal_msp.c
 

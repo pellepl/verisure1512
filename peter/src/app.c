@@ -10,6 +10,7 @@
 #include <miniutils.h>
 #include <flir.h>
 #include <joystick.h>
+#include <servo.h>
 
 #define FLIR_W 80
 #define FLIR_H 60
@@ -128,6 +129,9 @@ static void joystick_readout(void) {
   joy_v = normalize_adc_readout(joy_v);
   joy_h = normalize_adc_readout(joy_h);
 
+  servo_set(0, joy_h);
+  servo_set(1, joy_v);
+
   // visualize
   u16_t *disp = lcd;
   u32_t y;
@@ -157,6 +161,7 @@ static void on_vsync() {
 }
 
 void app_start(void) {
+  servo_init();
   flir_init();
   fill_color_tbl();
   joystick_init();
@@ -185,8 +190,8 @@ void app_start(void) {
       } else {
         if (!vsync) {
           vsync = TRUE;
-          print("VSYNC, max_line %i, min-max:%04x-%04x\n",
-              max_line, flir_min_val, flir_max_val);
+//          print("VSYNC, max_line %i, min-max:%04x-%04x\n",
+//              max_line, flir_min_val, flir_max_val);
           max_line = 0;
           prev_line = 0;
           flir_min_val_prev = flir_min_val;
