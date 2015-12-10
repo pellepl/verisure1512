@@ -89,6 +89,7 @@ CFILES		+= main.c app.c common.c
 CFILES		+= miniutils.c
 CFILES		+= uart_driver.c
 CFILES		+= flir.c
+CFILES		+= joystick.c
 
 CFILES		+= stm32f7xx_hal_msp.c
 
@@ -104,8 +105,8 @@ INC				+= -I./${stmcmsisdir}/Include
 INC				+= -I./${stmcmsisdircore}
 
 CFILES		+= stm32f7xx_hal.c
-#CFILES		+= stm32f7xx_hal_adc.c
-#CFILES		+= stm32f7xx_hal_adc_ex.c
+CFILES		+= stm32f7xx_hal_adc.c
+CFILES		+= stm32f7xx_hal_adc_ex.c
 #CFILES		+= stm32f7xx_hal_can.c
 #CFILES		+= stm32f7xx_hal_cec.c
 CFILES		+= stm32f7xx_hal_cortex.c

@@ -9,19 +9,22 @@
 #include <app.h>
 #include <miniutils.h>
 #include <flir.h>
+#include <joystick.h>
 
 #define FLIR_W 80
 #define FLIR_H 60
 
 #define C565(r,g,b) ((((r)&0b00011111) << (5+6)) | (((g)&0b00111111) << 5) | (((b)&0b00011111)))
 
+#define ADC_MIN 0x0600
+#define ADC_MAX 0x0a00
 
 //#define GRAYSCALE
 
 #ifdef GRAYSCALE
 #define RANGE 0xff
 #else
-#define RANGE (32+64+32+32)
+#define RANGE (32+64+64+64+32)
 #endif
 
 
@@ -88,26 +91,78 @@ static void flir2lcd_memcpy_quad(u16_t line, u16_t *src, u16_t sz) {
 static void fill_color_tbl(void) {
   int i;
   int ix = 0;
+  // blue
   for (i = 0; i < 32; i++) {
     color_tbl[ix++] = C565(0,0,i);
   }
+  // cyan
   for (i = 0; i < 64; i++) {
     color_tbl[ix++] = C565(0,i,31);
   }
-  for (i = 0; i < 32; i++) {
-    color_tbl[ix++] = C565(i,63,31-i);
+  // magenta
+  for (i = 0; i < 64; i++) {
+    color_tbl[ix++] = C565(i/2,63-i,31);
   }
+  // yellow
+  for (i = 0; i < 64; i++) {
+    color_tbl[ix++] = C565(31,i,31-i/2);
+  }
+  // white
   for (i = 0; i < 32; i++) {
     color_tbl[ix++] = C565(31,63,i);
   }
 }
 
 
+static u8_t normalize_adc_readout(u16_t x) {
+  u32_t v = MAX(ADC_MIN, MIN(ADC_MAX, x));
+  v = ((v - ADC_MIN) * 0xff) / (ADC_MAX - ADC_MIN);
+  return v;
+}
+
+static void joystick_readout(void) {
+  u16_t joy_v = joystick_get(J_DIR_VERT);
+  u16_t joy_h = joystick_get(J_DIR_HORI);
+
+  // normalize to 8 bit
+  joy_v = normalize_adc_readout(joy_v);
+  joy_h = normalize_adc_readout(joy_h);
+
+  // visualize
+  u16_t *disp = lcd;
+  u32_t y;
+  for (y = 0; y < 128; y++) {
+    u16_t v_col = ((joy_v < 128) & (joy_v <= y)) ? C565(0,63,0) : C565(8,16,8);
+    u16_t h_col = ((joy_h < 128) & (joy_h <= y)) ? C565(31,0,0) : C565(8,16,8);
+    disp[y*LCD_WW] = v_col;
+    disp[y*LCD_WW+1] = v_col;
+    disp[y*LCD_WW+4] = h_col;
+    disp[y*LCD_WW+5] = h_col;
+  }
+  for (y = 128; y < 256; y++) {
+    u16_t v_col = ((joy_v >= 128) & (joy_v >= y)) ? C565(0,63,0) : C565(8,16,8);
+    u16_t h_col = ((joy_h >= 128) & (joy_h >= y)) ? C565(31,0,0) : C565(8,16,8);
+    disp[y*LCD_WW] = v_col;
+    disp[y*LCD_WW+1] = v_col;
+    disp[y*LCD_WW+4] = h_col;
+    disp[y*LCD_WW+5] = h_col;
+  }
+
+  // start a new conversion
+  joystick_sample();
+}
+
+static void on_vsync() {
+  joystick_readout();
+}
+
 void app_start(void) {
   flir_init();
   fill_color_tbl();
+  joystick_init();
 
   print("reading flir\n");
+  joystick_sample();
   while (1) {
     memset(lcd, 0, LCD_WW*LCD_WH*2);
     memset(flir_line_pkt, 0, sizeof(flir_line_pkt));
@@ -138,6 +193,7 @@ void app_start(void) {
           flir_max_val_prev = flir_max_val;
           flir_min_val = 0xffff;
           flir_max_val = 0x0000;
+          on_vsync();
         }
       }
     }
@@ -148,7 +204,7 @@ void app_start(void) {
 
     int c = 1;
     int x, y;
-    volatile u32_t a = 0x28;
+    volatile u32_t a = 0x40;
     while (a--) {
       for (y = 0; y < LCD_WH; y++) {
         for (x = 0; x < LCD_WW; x++) {
@@ -159,6 +215,8 @@ void app_start(void) {
         }
       }
     }
+
+    flir_unstop();
   } // superloop
 
 }

@@ -42,7 +42,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *hspi){
     /* Enable SPI2 clock */
     SPIx_CLK_ENABLE();
     /* Enable DMA clock */
-    DMAx_CLK_ENABLE();
+    DMAx_SPI_CLK_ENABLE();
 
     /*##-2- Configure peripheral GPIO ##########################################*/
     /* SPI SCK GPIO pin configuration  */
@@ -115,11 +115,11 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *hspi){
 
     /*##-4- Configure the NVIC for DMA #########################################*/
     /* NVIC configuration for DMA transfer complete interrupt (SPI2_TX) */
-    HAL_NVIC_SetPriority(SPIx_DMA_TX_IRQn, 1, 1);
+    HAL_NVIC_SetPriority(SPIx_DMA_TX_IRQn, 0, 1);
     HAL_NVIC_EnableIRQ(SPIx_DMA_TX_IRQn);
 
     /* NVIC configuration for DMA transfer complete interrupt (SPI2_RX) */
-    HAL_NVIC_SetPriority(SPIx_DMA_RX_IRQn, 1, 0);
+    HAL_NVIC_SetPriority(SPIx_DMA_RX_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(SPIx_DMA_RX_IRQn);
   }
 }
@@ -146,7 +146,27 @@ void flir_init(void) {
 }
 
 void flir_stop(void) {
+  GPIO_InitTypeDef GPIO_InitStruct;
+
   HAL_SPI_DMAStop(&flir_spi_hdl);
+  /* SPI SCK GPIO pin configuration  */
+  GPIO_InitStruct.Pin = SPIx_SCK_PIN;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
+  GPIO_InitStruct.Alternate = 0;
+  HAL_GPIO_Init(SPIx_SCK_GPIO_PORT, &GPIO_InitStruct);
+}
+
+void flir_unstop(void) {
+  GPIO_InitTypeDef GPIO_InitStruct;
+  /* SPI SCK GPIO pin configuration  */
+  GPIO_InitStruct.Pin = SPIx_SCK_PIN;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
+  GPIO_InitStruct.Alternate = SPIx_SCK_AF;
+  HAL_GPIO_Init(SPIx_SCK_GPIO_PORT, &GPIO_InitStruct);
 }
 
 void flir_get(u8_t *rx_buf, u16_t len) {

@@ -13,7 +13,7 @@
 
 #define SPIx                             SPI2
 #define SPIx_CLK_ENABLE()                __HAL_RCC_SPI2_CLK_ENABLE()
-#define DMAx_CLK_ENABLE()                __HAL_RCC_DMA1_CLK_ENABLE()
+#define DMAx_SPI_CLK_ENABLE()                __HAL_RCC_DMA1_CLK_ENABLE()
 #define SPIx_SCK_GPIO_CLK_ENABLE()       __HAL_RCC_GPIOI_CLK_ENABLE()
 #define SPIx_MISO_GPIO_CLK_ENABLE()      __HAL_RCC_GPIOB_CLK_ENABLE()
 #define SPIx_MOSI_GPIO_CLK_ENABLE()      __HAL_RCC_GPIOB_CLK_ENABLE()
@@ -54,6 +54,6 @@ void flir_cs_assert(bool assert);
 void flir_get(u8_t *rx_buf, u16_t len);
 void flir_get_blocking(u8_t *rx_buf, u16_t len);
 void flir_stop(void);
-
+void flir_unstop(void);
 
 #endif /* FLIR_H_ */
