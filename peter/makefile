@@ -88,6 +88,7 @@ SFILES		+= variadic.s
 CFILES		+= main.c app.c common.c
 CFILES		+= miniutils.c
 CFILES		+= uart_driver.c
+CFILES		+= flir.c
 
 CFILES		+= stm32f7xx_hal_msp.c
 
@@ -152,11 +153,11 @@ CFILES		+= stm32f7xx_hal_rcc_ex.c
 #CFILES		+= stm32f7xx_hal_smartcard.c
 #CFILES		+= stm32f7xx_hal_smartcard_ex.c
 #CFILES		+= stm32f7xx_hal_spdifrx.c
-#CFILES		+= stm32f7xx_hal_spi.c
+CFILES		+= stm32f7xx_hal_spi.c
 CFILES		+= stm32f7xx_hal_sdram.c
 CFILES		+= stm32f7xx_hal_sram.c
-#CFILES		+= stm32f7xx_hal_tim.c
-#CFILES		+= stm32f7xx_hal_tim_ex.c
+CFILES		+= stm32f7xx_hal_tim.c
+CFILES		+= stm32f7xx_hal_tim_ex.c
 #CFILES		+= stm32f7xx_hal_uart.c
 #CFILES		+= stm32f7xx_hal_usart.c
 #CFILES		+= stm32f7xx_hal_wwdg.c

@@ -16,7 +16,6 @@
 
 extern uint8_t FLASH_START, FLASH_SIZE, RAM_START, RAM_SIZE;
 
-static void delay(uint32_t loops);
 static void uart_cb(void *arg, u8_t c);
 static void SystemClock_Config(void);
 static void MPU_Config(void);
@@ -224,8 +223,9 @@ int main(void) {
 
   init_display();
 
-  sdram_test();
+  //sdram_test();
 
+  print("\n\napp start\n\n");
   app_start();
 
   print("\nstartup finished\n");
@@ -292,14 +292,6 @@ static void sdram_test(void) {
   }
   print("OK\n");
 }
-
-
-static void delay(uint32_t loops) {
-  volatile uint32_t a = loops;
-  while (--a)
-    ;
-}
-
 
 /**
   * @brief  System Clock Configuration
@@ -435,9 +427,9 @@ static void LCD_Config(void)
      Horizontal stop = Horizontal start + window width -1 = 43 + 480 -1
      Vertical stop   = Vertical start + window height -1  = 12 + 272 -1      */
   pLayerCfg.WindowX0 = 0;
-  pLayerCfg.WindowX1 = 480;
+  pLayerCfg.WindowX1 = LCD_WW;
   pLayerCfg.WindowY0 = 0;
-  pLayerCfg.WindowY1 = 272;
+  pLayerCfg.WindowY1 = LCD_WH;
 
   /* Pixel Format configuration*/
   pLayerCfg.PixelFormat = LTDC_PIXEL_FORMAT_RGB565;
@@ -459,8 +451,8 @@ static void LCD_Config(void)
   pLayerCfg.BlendingFactor2 = LTDC_BLENDING_FACTOR2_CA;
 
   /* Configure the number of lines and number of pixels per line */
-  pLayerCfg.ImageWidth  = 480;
-  pLayerCfg.ImageHeight = 272;
+  pLayerCfg.ImageWidth  = LCD_W;
+  pLayerCfg.ImageHeight = LCD_H;
 
   /* Configure the LTDC */
   if(HAL_LTDC_Init(&hltdc_F) != HAL_OK)

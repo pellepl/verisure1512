@@ -14,6 +14,11 @@
 
 #define FBUF_ADDR (0xc0000000)
 
+#define LCD_W 480
+#define LCD_H 272
+#define LCD_WW 480
+#define LCD_WH 272
+
 #define CONFIG_UART_CNT 1
 #define CONFIG_UART6
 
