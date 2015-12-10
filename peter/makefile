@@ -88,6 +88,8 @@ SFILES		+= variadic.s
 CFILES		+= main.c app.c common.c
 CFILES		+= miniutils.c
 CFILES		+= uart_driver.c
+CFILES		+= flir.c
+CFILES		+= joystick.c
 
 CFILES		+= stm32f7xx_hal_msp.c
 
@@ -103,8 +105,8 @@ INC				+= -I./${stmcmsisdir}/Include
 INC				+= -I./${stmcmsisdircore}
 
 CFILES		+= stm32f7xx_hal.c
-#CFILES		+= stm32f7xx_hal_adc.c
-#CFILES		+= stm32f7xx_hal_adc_ex.c
+CFILES		+= stm32f7xx_hal_adc.c
+CFILES		+= stm32f7xx_hal_adc_ex.c
 #CFILES		+= stm32f7xx_hal_can.c
 #CFILES		+= stm32f7xx_hal_cec.c
 CFILES		+= stm32f7xx_hal_cortex.c
@@ -152,11 +154,11 @@ CFILES		+= stm32f7xx_hal_rcc_ex.c
 #CFILES		+= stm32f7xx_hal_smartcard.c
 #CFILES		+= stm32f7xx_hal_smartcard_ex.c
 #CFILES		+= stm32f7xx_hal_spdifrx.c
-#CFILES		+= stm32f7xx_hal_spi.c
+CFILES		+= stm32f7xx_hal_spi.c
 CFILES		+= stm32f7xx_hal_sdram.c
 CFILES		+= stm32f7xx_hal_sram.c
-#CFILES		+= stm32f7xx_hal_tim.c
-#CFILES		+= stm32f7xx_hal_tim_ex.c
+CFILES		+= stm32f7xx_hal_tim.c
+CFILES		+= stm32f7xx_hal_tim_ex.c
 #CFILES		+= stm32f7xx_hal_uart.c
 #CFILES		+= stm32f7xx_hal_usart.c
 #CFILES		+= stm32f7xx_hal_wwdg.c
