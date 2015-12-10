@@ -26,6 +26,11 @@
 #define ADC_MAX 0x0a00
 
 //#define GRAYSCALE
+//#define TEMP_RANGE_DYNAMIC
+// About -18 degree C (calibrated on fridge -18 C)
+#define TEMP_RANGE_STATIC_MIN  (0x1B00)
+// About +100 degree C (calibrated on boiling water +100 C)
+#define TEMP_RANGE_STATIC_MAX  (0x2A00)
 
 #ifdef GRAYSCALE
 #define RANGE 0xff
@@ -49,22 +54,28 @@ static void flir2lcd_memcpy_quad(u16_t line, u16_t *src, u16_t sz) {
   while(sz--) {
     u16_t flir = *src++;
     flir = ((flir & 0xff00) >> 8) | ((flir & 0xff) << 8);
+
+#ifdef TEMP_RANGE_DYNAMIC
+    // dynamic range
     flir_min_val = MIN(flir, flir_min_val);
     flir_max_val = MAX(flir, flir_max_val);
+#endif
 
     u32_t f;
-    u16_t diff = flir_max_val_prev - flir_min_val_prev;
-    if (diff > 0) {
+    u16_t range = flir_max_val_prev - flir_min_val_prev;
+    if (range > 0) {
       // adjust to min
-      u16_t flir_comp = flir < flir_min_val_prev ? 0 : (flir - flir_min_val_prev);
+      u16_t flir_comp = (flir < flir_min_val_prev) ? 0 : (flir - flir_min_val_prev);
       // adjust to max
-      flir_comp = MIN(diff, flir_comp);
+      flir_comp = MIN(range, flir_comp);
       // linearize
-      f = ((RANGE-1) * flir_comp) / diff;
+      f = ((RANGE-1) * flir_comp) / range;
     } else {
       f = (RANGE * flir) >> 14;
     }
     f &= 0xff;
+
+    // transform to colormap
     u16_t px =
 #ifdef GRAYSCALE
         (((f >> 3) & 0b00011111) << (6+5)) |
@@ -75,6 +86,7 @@ static void flir2lcd_memcpy_quad(u16_t line, u16_t *src, u16_t sz) {
     color_tbl[f];
 #endif
 
+    // quad pixel
     dst[LCD_WW*3] = px;
     dst[LCD_WW*2] = px;
     dst[LCD_WW] = px;
@@ -203,14 +215,22 @@ void app_start(void) {
       } else {
         if (!vsync) {
           vsync = TRUE;
-//          print("VSYNC, max_line %i, min-max:%04x-%04x\n",
-//              max_line, flir_min_val, flir_max_val);
+#if 0
+          print("VSYNC, max_line %i, min-max:%04x-%04x\n",
+              max_line, flir_min_val, flir_max_val);
+#endif
           max_line = 0;
           prev_line = 0;
+
           flir_min_val_prev = flir_min_val;
           flir_max_val_prev = flir_max_val;
+#ifdef TEMP_RANGE_DYNAMIC
           flir_min_val = 0xffff;
           flir_max_val = 0x0000;
+#else
+          flir_min_val = TEMP_RANGE_STATIC_MIN;
+          flir_max_val = TEMP_RANGE_STATIC_MAX;
+#endif
           on_vsync();
         }
       }
