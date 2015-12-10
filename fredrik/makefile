@@ -85,7 +85,7 @@ INC				+= -I./${sourcedir}/fromcube
 SFILES		+= memset.s
 SFILES		+= memcpy.s
 SFILES		+= variadic.s
-CFILES		+= main.c app.c common.c
+CFILES		+= main.c common.c
 CFILES		+= miniutils.c
 CFILES		+= uart_driver.c
 CFILES		+= flir.c
@@ -98,6 +98,7 @@ CFILES		+= stm32f7xx_hal_msp.c
 CPATH		+= src
 INC		+= -I./src
 CFILES		+= lepton_packet.c
+CFILES		+= app_fredrik.c
 
 # stm32 lib files
 SPATH 		+= ${stmcmsisdir}/Source/Templates/gcc_ride7
