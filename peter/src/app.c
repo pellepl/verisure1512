@@ -11,6 +11,8 @@
 #include <flir.h>
 #include <joystick.h>
 #include <servo.h>
+#include <stm32746g_discovery_ts.h>
+
 
 #define FLIR_W 80
 #define FLIR_H 60
@@ -156,8 +158,19 @@ static void joystick_readout(void) {
   joystick_sample();
 }
 
+static void touchscreen_readout(void) {
+  TS_StateTypeDef ts;
+  u8_t res = BSP_TS_GetState(&ts);
+  if (res != TS_OK) halt("ts getstate");
+  u8_t i;
+  for (i = 0; i < ts.touchDetected; i++) {
+    print("touch%i @ %i,%i\n", i, ts.touchX[i], ts.touchY[i]);
+  }
+}
+
 static void on_vsync() {
   joystick_readout();
+  touchscreen_readout();
 }
 
 void app_start(void) {
@@ -165,6 +178,7 @@ void app_start(void) {
   flir_init();
   fill_color_tbl();
   joystick_init();
+  if (BSP_TS_Init(LCD_WW, LCD_WH) != TS_OK) halt("ts init");
 
   print("reading flir\n");
   joystick_sample();
@@ -205,7 +219,7 @@ void app_start(void) {
 
     print("resyncing...\n");
     flir_stop();
-    flir_cs_assert(FALSE);
+    flir_cs_assert(TRUE);
 
     int c = 1;
     int x, y;

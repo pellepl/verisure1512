@@ -382,6 +382,7 @@ uint32_t BSP_PB_GetState(Button_TypeDef Button)
   return HAL_GPIO_ReadPin(BUTTON_PORT[Button], BUTTON_PIN[Button]);
 }
 
+#if 0
 /**
   * @brief  Configures COM port.
   * @param  COM: COM port to be configured.
@@ -447,6 +448,7 @@ void BSP_COM_DeInit(COM_TypeDef COM, UART_HandleTypeDef *huart)
   /* GPIO pins clock, DMA clock can be shut down in the application 
      by surcharging this __weak function */
 }
+#endif
 
 /*******************************************************************************
                             BUS OPERATIONS

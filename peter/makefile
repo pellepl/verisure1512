@@ -79,6 +79,7 @@ BUILD_NUMBER_FILE=build-number.txt
 # app files
 CPATH 		+= ${sourcedir}
 CPATH 		+= ${sourcedir}/fromcube
+CPATH 		+= ${sourcedir}/Components/ft5336
 SPATH 		+= ${sourcedir}
 INC				+= -I./${sourcedir}
 INC				+= -I./${sourcedir}/fromcube
@@ -93,6 +94,9 @@ CFILES		+= joystick.c
 CFILES		+= servo.c
 
 CFILES		+= stm32f7xx_hal_msp.c
+CFILES		+= stm32746g_discovery.c
+CFILES		+= stm32746g_discovery_ts.c
+CFILES		+= ft5336.c
 
 # stm32 lib files
 SPATH 		+= ${stmcmsisdir}/Source/Templates/gcc_ride7
@@ -129,8 +133,8 @@ CFILES		+= stm32f7xx_hal_gpio.c
 #CFILES		+= stm32f7xx_hal_hash.c
 #CFILES		+= stm32f7xx_hal_hash_ex.c
 #CFILES		+= stm32f7xx_hal_hcd.c
-#CFILES		+= stm32f7xx_hal_i2c.c
-#CFILES		+= stm32f7xx_hal_i2c_ex.c
+CFILES		+= stm32f7xx_hal_i2c.c
+CFILES		+= stm32f7xx_hal_i2c_ex.c
 #CFILES		+= stm32f7xx_hal_i2s.c
 #CFILES		+= stm32f7xx_hal_irda.c
 #CFILES		+= stm32f7xx_hal_iwdg.c
