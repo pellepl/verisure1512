@@ -9,6 +9,7 @@
 #define TARGET_H_
 
 #include <common.h>
+#include <system.h>
 #include <stm32f7xx_hal_conf.h>
 #include <stm32f7xx.h>
 
