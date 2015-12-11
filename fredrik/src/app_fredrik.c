@@ -11,6 +11,7 @@
 #include <flir.h>
 #include <joystick.h>
 #include <servo.h>
+#include <stm32746g_discovery_ts.h>
 
 #define LEPTON_CHECK_CRC
 #ifdef LEPTON_CHECK_CRC
@@ -20,10 +21,19 @@
 #define FLIR_W 80
 #define FLIR_H 60
 
+#define FLIR_INVERT_Y
+#define FLIR_INVERT_X
+
 #define C565(r,g,b) ((((r)&0b00011111) << (5+6)) | (((g)&0b00111111) << 5) | (((b)&0b00011111)))
 
-#define ADC_MIN 0x0600
-#define ADC_MAX 0x0a00
+#define JOYSTICK_ADC_MIN 0x0600
+#define JOYSTICK_ADC_MAX 0x0a00
+
+//#define CONTROL_JOYSTICK
+#define CONTROL_TOUCHSCREEN
+
+#define CONTROL_TOUCHSCREEN_BORDER_X  16
+#define CONTROL_TOUCHSCREEN_BORDER_Y  8
 
 //#define GRAYSCALE
 //#define TEMP_RANGE_DYNAMIC
@@ -33,13 +43,13 @@
 #define TEMP_RANGE_STATIC_MAX  (0x2A00)
 
 #ifdef GRAYSCALE
-#define RANGE 0xff
+#define COLOR_RANGE 0xff
 #else
-#define RANGE (32+64+64+64+32)
+#define COLOR_RANGE (32+64+64+64+32)
 #endif
 
 
-u16_t color_tbl[RANGE];
+u16_t color_tbl[COLOR_RANGE];
 static u8_t flir_line_pkt[4+2*FLIR_W];
 static u16_t *lcd = (u16_t *)FBUF_ADDR;
 static u16_t flir_max_val = 0;
@@ -48,11 +58,28 @@ static u16_t flir_max_val_prev = 0;
 static u16_t flir_min_val_prev = 0;
 
 static void flir2lcd_memcpy_quad(u16_t line, u16_t *src, u16_t sz) {
-  u16_t *dst = &lcd[line*LCD_WW*4 +
+  //  u16_t *dst = &lcd[line*LCD_WW*4 +
+  u16_t lcd_line;
+#ifdef FLIR_INVERT_Y
+  lcd_line = FLIR_H - line;
+#else
+  lcd_line = line;
+#endif
+
+  u16_t *dst = &lcd[lcd_line*LCD_WW*4 +
                     (LCD_WW-(FLIR_W*4))/2 +
                     ((LCD_WH-(FLIR_H*4))/2)*LCD_WW];
+#ifdef FLIR_INVERT_X
+  src += FLIR_W;
+#endif
   while(sz--) {
-    u16_t flir = *src++;
+    //    u16_t flir = *src++;
+    u16_t flir;
+#ifdef FLIR_INVERT_X
+    flir = *--src;
+#else
+    flir = *src++;
+#endif
     flir = ((flir & 0xff00) >> 8) | ((flir & 0xff) << 8);
 
 #ifdef TEMP_RANGE_DYNAMIC
@@ -69,9 +96,9 @@ static void flir2lcd_memcpy_quad(u16_t line, u16_t *src, u16_t sz) {
       // adjust to max
       flir_comp = MIN(range, flir_comp);
       // linearize
-      f = ((RANGE-1) * flir_comp) / range;
+      f = ((COLOR_RANGE-1) * flir_comp) / range;
     } else {
-      f = (RANGE * flir) >> 14;
+      f = (COLOR_RANGE * flir) >> 14;
     }
     f &= 0xff;
 
@@ -133,8 +160,8 @@ static void fill_color_tbl(void) {
 
 
 static u8_t normalize_adc_readout(u16_t x) {
-  u32_t v = MAX(ADC_MIN, MIN(ADC_MAX, x));
-  v = ((v - ADC_MIN) * 0xff) / (ADC_MAX - ADC_MIN);
+  u32_t v = MAX(JOYSTICK_ADC_MIN, MIN(JOYSTICK_ADC_MAX, x));
+  v = ((v - JOYSTICK_ADC_MIN) * 0xff) / (JOYSTICK_ADC_MAX - JOYSTICK_ADC_MIN);
   return v;
 }
 
@@ -146,9 +173,11 @@ static void joystick_readout(void) {
   joy_v = normalize_adc_readout(joy_v);
   joy_h = normalize_adc_readout(joy_h);
 
+#ifdef CONTROL_JOYSTICK
   servo_set(0, joy_h);
   servo_set(1, joy_v);
-
+#endif
+  
   // visualize
   u16_t *disp = lcd;
   u32_t y;
@@ -173,16 +202,51 @@ static void joystick_readout(void) {
   joystick_sample();
 }
 
+static void touchscreen_readout(void) {
+  TS_StateTypeDef ts;
+  u8_t res = BSP_TS_GetState(&ts);
+  if (res != TS_OK) halt("ts getstate");
+#ifdef CONTROL_TOUCHSCREEN
+  if (ts.touchDetected > 0) {
+    s32_t x = ts.touchX[0];
+    s32_t y = ts.touchY[0];
+    x -= CONTROL_TOUCHSCREEN_BORDER_X;
+    y -= CONTROL_TOUCHSCREEN_BORDER_Y;
+    x = MAX(0, MIN(0xff, x));
+    y = MAX(0, MIN(0xff, y));
+    servo_set(0, y);
+    servo_set(1, 255-x);
+  }
+#else
+  u8_t i;
+  for (i = 0; i < ts.touchDetected; i++) {
+    print("touch%i @ %i,%i\n", i, ts.touchX[i], ts.touchY[i]);
+  }
+#endif
+}
+
 static void on_vsync() {
   joystick_readout();
+  touchscreen_readout();
 }
 
 void app_start(void) {
   servo_init();
+  servo_set(0, 128);
+  servo_set(1, 128);
+
   flir_init();
   fill_color_tbl();
   joystick_init();
-
+  //  if (BSP_TS_Init(LCD_WW, LCD_WH) != TS_OK) halt("ts init");
+   if (
+#ifdef CONTROL_TOUCHSCREEN
+      BSP_TS_Init(255 + CONTROL_TOUCHSCREEN_BORDER_X*2, 255 + CONTROL_TOUCHSCREEN_BORDER_Y*2)
+#else
+      BSP_TS_Init(LCD_WW, LCD_WH)
+#endif
+      != TS_OK) halt("ts init");
+ 
   print("reading flir\n");
   joystick_sample();
   while (1) {
